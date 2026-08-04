@@ -1,4 +1,4 @@
-name: 自动同步上游NodeWarden源码
+name: 原生Git同步NodeWarden上游
 permissions:
   contents: write
 on:
@@ -9,16 +9,17 @@ jobs:
   sync:
     runs-on: ubuntu-latest
     steps:
-      - name: 检出仓库代码
+      - name: 拉取完整仓库代码
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: 同步上游官方main分支
-        uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
-        with:
-          upstream_repository: shuaiplus/nodewarden
-          upstream_branch: main
-          target_branch: main
-          target_repo_token: ${{ secrets.GITHUB_TOKEN }}
-          sync_mode: fast-forward-only
-          test_mode: false
+      - name: 配置Git身份并同步上游仓库
+        run: |
+          git config --global user.name "AutoSync Bot"
+          git config --global user.email "autosync@github.com"
+          git remote remove upstream || true
+          git remote add upstream https://github.com/shuaiplus/nodewarden.git
+          git fetch upstream main
+          # 仅快进合并，无冲突才同步，冲突直接终止，不会覆盖自定义修改
+          git merge --ff-only upstream/main
+          git push origin main
